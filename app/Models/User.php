@@ -26,11 +26,17 @@ class User extends Authenticatable
         'ultimo_acceso',
     ];
 
-    public function role()
+    /**
+     * Relación con el rol del usuario.
+     */
+    public function rol()
     {
         return $this->belongsTo(Role::class, 'rol_id');
     }
 
+    /**
+     * Relación con los permisos granulares del usuario.
+     */
     public function permisos()
     {
         return $this->hasMany(Permiso::class, 'user_id');
@@ -56,6 +62,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'estado' => 'boolean',
         ];
     }
 }
