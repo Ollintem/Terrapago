@@ -61,4 +61,28 @@ class UserPermissions extends Component
             'modulos' => Modulo::all()
         ]);
     }
+
+    public function marcarTodos()
+    {
+        $modulos = Modulo::all();
+
+        foreach ($modulos as $modulo) {
+            foreach (['mostrar', 'crear', 'editar', 'eliminar', 'gestionar'] as $accion) {
+                $this->permisosMatriz[$modulo->id][$accion] = true;
+                $this->actualizarPermiso($modulo->id, $accion);
+            }
+        }
+    }
+
+    public function desmarcarTodos()
+    {
+        $modulos = Modulo::all();
+
+        foreach ($modulos as $modulo) {
+            foreach (['mostrar', 'crear', 'editar', 'eliminar', 'gestionar'] as $accion) {
+                $this->permisosMatriz[$modulo->id][$accion] = false;
+                $this->actualizarPermiso($modulo->id, $accion);
+            }
+        }
+    }
 }

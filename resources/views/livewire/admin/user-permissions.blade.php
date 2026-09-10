@@ -41,5 +41,28 @@
                 @endforeach
             </tbody>
         </table>
+
+        <!-- Barra inferior de acciones rápidas -->
+        <div class="p-4 bg-slate-50/80 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <button type="button" 
+                    wire:click="marcarTodos" 
+                    class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-semibold rounded-lg shadow-sm transition inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Marcar Todas las Casillas
+                </button>
+                <button type="button" 
+                    wire:click="desmarcarTodos" 
+                    class="px-3.5 py-2 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-600 text-xs font-semibold rounded-lg border border-slate-300 shadow-sm transition">
+                    Desmarcar Todas
+                </button>
+            </div>
+
+            <span class="text-xs text-slate-400 font-medium italic">
+                * Los cambios se sincronizan en tiempo real
+            </span>
+        </div>
     </div>
 </div>
