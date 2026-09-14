@@ -4,6 +4,8 @@ namespace App\Livewire\Admin;
 
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Modulo;
+use App\Models\Permiso;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -15,12 +17,18 @@ class UserManagement extends Component
     public $nombre, $email, $password, $rol_id, $user_id;
     public $isModalOpen = false;
 
+    // Resetear la paginación al escribir en el buscador
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
     protected function rules()
     {
         return [
-            'nombre' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email,' . $this->user_id,
-            'rol_id' => 'required|exists:roles,id',
+            'nombre'   => 'required|string|max:100',
+            'email'    => 'required|email|unique:users,email,' . $this->user_id,
+            'rol_id'   => 'required|exists:roles,id',
             'password' => $this->user_id ? 'nullable|min:6' : 'required|min:6',
         ];
     }
@@ -28,21 +36,43 @@ class UserManagement extends Component
     public function render()
     {
         $usuarios = User::with('rol')
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('nombre', 'like', '%' . $this->search . '%')
                       ->orWhere('email', 'like', '%' . $this->search . '%');
             })
+            ->latest()
             ->paginate(10);
 
         return view('livewire.admin.user-management', [
             'usuarios' => $usuarios,
-            'roles' => Role::all()
-        ]);
+            'roles'    => Role::all(),
+        ])->layout('layouts.app');
     }
 
     public function abrirModal()
     {
         $this->reset(['nombre', 'email', 'password', 'rol_id', 'user_id']);
+        $this->resetValidation();
+        $this->isModalOpen = true;
+    }
+
+    public function cerrarModal()
+    {
+        $this->resetValidation();
+        $this->isModalOpen = false;
+    }
+
+    public function editar($id)
+    {
+        $this->resetValidation();
+        $user = User::findOrFail($id);
+        
+        $this->user_id = $user->id;
+        $this->nombre  = $user->nombre;
+        $this->email   = $user->email;
+        $this->rol_id  = $user->rol_id;
+        $this->password = '';
+        
         $this->isModalOpen = true;
     }
 
@@ -50,27 +80,71 @@ class UserManagement extends Component
     {
         $this->validate();
 
-        User::updateOrCreate(
+        $esNuevo = empty($this->user_id);
+
+        $datos = [
+            'nombre' => $this->nombre,
+            'email'  => $this->email,
+            'rol_id' => $this->rol_id,
+        ];
+
+        // Solo actualiza la contraseña si se ingresó una nueva
+        if ($this->password) {
+            $datos['password'] = bcrypt($this->password);
+        }
+
+        $usuario = User::updateOrCreate(
             ['id' => $this->user_id],
-            [
-                'nombre' => $this->nombre,
-                'email' => $this->email,
-                'rol_id' => $this->rol_id,
-                'password' => $this->password ? bcrypt($this->password) : User::find($this->user_id)->password,
-            ]
+            $datos
         );
 
+        // Si es un usuario nuevo, inicializarle sus registros en la tabla de permisos
+        if ($esNuevo) {
+            $modulos = Modulo::all();
+            foreach ($modulos as $modulo) {
+                Permiso::firstOrCreate(
+                    [
+                        'user_id'   => $usuario->id,
+                        'modulo_id' => $modulo->id,
+                    ],
+                    [
+                        'mostrar'  => false,
+                        'crear'     => false,
+                        'editar'   => false,
+                        'eliminar' => false,
+                    ]
+                );
+            }
+        }
+
         $this->isModalOpen = false;
-        session()->flash('message', 'Usuario guardado correctamente.');
+        session()->flash('mensaje', 'Usuario guardado correctamente.');
     }
 
-    public function editar($id)
+    public function irAPermisos($id)
     {
-        $user = User::findOrFail($id);
-        $this->user_id = $user->id;
-        $this->nombre = $user->nombre;
-        $this->email = $user->email;
-        $this->rol_id = $user->rol_id;
-        $this->isModalOpen = true;
+        return redirect()->route('admin.usuarios.permisos', $id);
+    }
+
+    public function eliminar($id)
+    {
+        // 1. Evitar que un usuario se elimine a sí mismo
+        if (auth()->id() == $id) {
+            session()->flash('message', 'No puedes eliminar tu propia cuenta en sesión.');
+            return;
+        }
+
+        $usuario = User::findOrFail($id);
+
+        // 2. Proteger al Administrador principal
+        if ($usuario->email === 'admin@terrapago.com') {
+            session()->flash('message', 'El Super Administrador principal no puede ser eliminado.');
+            return;
+        }
+
+        // 3. Eliminar usuario (sus permisos se eliminan en cascada por la foreign key)
+        $usuario->delete();
+
+        session()->flash('mensaje', 'Usuario eliminado correctamente.');
     }
 }

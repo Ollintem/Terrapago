@@ -16,7 +16,6 @@ return new class extends Migration
             $table->boolean('crear')->default(false);
             $table->boolean('editar')->default(false);
             $table->boolean('eliminar')->default(false);
-            $table->boolean('gestionar')->default(false);
             $table->timestamps();
 
             $table->unique(['user_id', 'modulo_id']);

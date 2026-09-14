@@ -1,20 +1,32 @@
 <div class="p-6 max-w-7xl mx-auto">
+    {{-- Encabezado y Botón de Nuevo Usuario --}}
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Gestión de Usuarios y Personal</h1>
-        <button wire:click="abrirModal" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-sm">
-            + Nuevo Usuario
-        </button>
+
+        @if(auth()->user()->rol && in_array(strtolower(auth()->user()->rol->nombre), ['administrador', 'super admin', 'superadministrador']) 
+            || auth()->user()->permisos()->whereHas('modulo', fn($q) => $q->where('clave', 'usuarios'))->where('crear', true)->exists())
+            <button wire:click="abrirModal" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-sm cursor-pointer">
+                + Nuevo Usuario
+            </button>
+        @endif
     </div>
 
-    @if (session()->has('message'))
+    {{-- Notificaciones Flash --}}
+    @if (session()->has('mensaje'))
         <div class="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 p-4 mb-4 rounded-r-lg">
-            <p>{{ session('message') }}</p>
+            <p class="text-sm font-medium">{{ session('mensaje') }}</p>
+        </div>
+    @endif
+    @if (session()->has('message'))
+        <div class="bg-rose-50 border-l-4 border-rose-500 text-rose-700 p-4 mb-4 rounded-r-lg">
+            <p class="text-sm font-medium">{{ session('message') }}</p>
         </div>
     @endif
 
+    {{-- Contenedor de la Tabla --}}
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-            <input wire:model.live="search" type="text" placeholder="Buscar por nombre o correo..." class="w-full max-w-sm px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+            <input wire:model.live.debounce.300ms="search" type="text" placeholder="Buscar por nombre o correo..." class="w-full max-w-sm px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
         </div>
 
         <table class="w-full text-left border-collapse">
@@ -33,9 +45,15 @@
                         <td class="p-4 font-medium text-slate-900">{{ $user->nombre }}</td>
                         <td class="p-4 text-slate-500">{{ $user->email }}</td>
                         <td class="p-4">
-                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">
-                                {{ $user->rol->nombre ?? 'Sin Rol' }}
-                            </span>
+                            @if(in_array(strtolower($user->rol->nombre ?? ''), ['administrador', 'super admin', 'superadministrador']))
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    {{ $user->rol->nombre }}
+                                </span>
+                            @else
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">
+                                    {{ $user->rol->nombre ?? 'Sin Rol' }}
+                                </span>
+                            @endif
                         </td>
                         <td class="p-4">
                             <span class="px-2.5 py-1 text-xs font-semibold rounded-full {{ $user->estado ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800' }}">
@@ -43,12 +61,31 @@
                             </span>
                         </td>
                         <td class="p-4 text-center space-x-2">
-                            <button wire:click="editar({{ $user->id }})" class="text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 px-3 py-1.5 rounded-md transition">Editar</button>
-                            
-                            <!-- Botón hacia el módulo de permisos -->
-                            <a href="{{ url('/admin/usuarios/' . $user->id . '/permisos') }}" class="inline-block bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-medium text-xs px-3 py-1.5 rounded-md transition">
-                                Configurar Permisos
-                            </a>
+                            {{-- Acciones de Edición y Configuración de Permisos --}}
+                            @if(auth()->user()->rol && in_array(strtolower(auth()->user()->rol->nombre), ['administrador', 'super admin', 'superadministrador']) 
+                                || auth()->user()->permisos()->whereHas('modulo', fn($q) => $q->where('clave', 'usuarios'))->where('editar', true)->exists())
+                                
+                                <button wire:click="editar({{ $user->id }})" class="text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 px-3 py-1.5 rounded-md transition cursor-pointer">
+                                    Editar
+                                </button>
+                                
+                                <a href="{{ route('admin.usuarios.permisos', $user->id) }}" class="inline-block bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-medium text-xs px-3 py-1.5 rounded-md transition cursor-pointer">
+                                    Configurar Permisos
+                                </a>
+                            @endif
+
+                            {{-- Acción de Eliminación --}}
+                            @if(auth()->user()->rol && in_array(strtolower(auth()->user()->rol->nombre), ['administrador', 'super admin', 'superadministrador']) 
+                                || auth()->user()->permisos()->whereHas('modulo', fn($q) => $q->where('clave', 'usuarios'))->where('eliminar', true)->exists())
+                                
+                                @if($user->id !== auth()->id() && $user->email !== 'admin@terrapago.com')
+                                    <button wire:click="eliminar({{ $user->id }})" 
+                                            wire:confirm="¿Estás seguro de que deseas eliminar permanentemente a {{ $user->nombre }}?"
+                                            class="text-rose-600 hover:text-rose-800 font-medium text-xs bg-rose-50 px-3 py-1.5 rounded-md transition cursor-pointer">
+                                        Eliminar
+                                    </button>
+                                @endif
+                            @endif
                         </td>
                     </tr>
                 @empty
@@ -58,13 +95,15 @@
                 @endforelse
             </tbody>
         </table>
+
         <div class="p-4 border-t border-slate-100">
             {{ $usuarios->links() }}
         </div>
     </div>
 
+    {{-- Modal de Creación / Edición --}}
     @if($isModalOpen)
-        <div class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
                 <h3 class="text-lg font-bold text-slate-800 mb-4">{{ $user_id ? 'Editar Usuario' : 'Registrar Nuevo Usuario' }}</h3>
                 <div class="space-y-4">
@@ -95,8 +134,8 @@
                     </div>
                 </div>
                 <div class="mt-6 flex justify-end space-x-3">
-                    <button wire:click="$set('isModalOpen', false)" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">Cancelar</button>
-                    <button wire:click="guardar" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">Guardar</button>
+                    <button wire:click="cerrarModal" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 cursor-pointer">Cancelar</button>
+                    <button wire:click="guardar" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 cursor-pointer">Guardar</button>
                 </div>
             </div>
         </div>

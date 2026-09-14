@@ -2,87 +2,86 @@
 
 namespace App\Livewire\Admin;
 
+use Livewire\Component;
 use App\Models\User;
 use App\Models\Modulo;
 use App\Models\Permiso;
-use Livewire\Component;
 
 class UserPermissions extends Component
 {
-    public User $usuario;
-    public $permisosMatriz = [];
+    public $user;
+    public $modulos;
+    // Estructura: [modulo_id => ['mostrar' => bool, 'crear' => bool, 'editar' => bool, 'eliminar' => bool]]
+    public $permisosSeleccionados = [];
 
-    public function mount(User $user)
+    public function mount($id)
     {
-        $this->usuario = $user;
-        $this->cargarMatriz();
-    }
+        $this->user = User::with('rol')->findOrFail($id);
+        $this->modulos = Modulo::all();
 
-    public function cargarMatriz()
-    {
-        $modulos = Modulo::all();
-        
-        foreach ($modulos as $modulo) {
-            $permiso = Permiso::firstOrNew([
-                'user_id' => $this->usuario->id,
-                'modulo_id' => $modulo->id
-            ]);
+        // Cargar permisos existentes desde la base de datos
+        foreach ($this->modulos as $modulo) {
+            $permiso = Permiso::where('user_id', $this->user->id)
+                ->where('modulo_id', $modulo->id)
+                ->first();
 
-            $this->permisosMatriz[$modulo->id] = [
-                'mostrar' => (bool) $permiso->mostrar,
-                'crear' => (bool) $permiso->crear,
-                'editar' => (bool) $permiso->editar,
-                'eliminar' => (bool) $permiso->eliminar,
-                'gestionar' => (bool) $permiso->gestionar,
+            $this->permisosSeleccionados[$modulo->id] = [
+                'mostrar'  => (bool) ($permiso->mostrar ?? false),
+                'crear'     => (bool) ($permiso->crear ?? false),
+                'editar'   => (bool) ($permiso->editar ?? false),
+                'eliminar' => (bool) ($permiso->eliminar ?? false),
             ];
         }
     }
 
-    public function actualizarPermiso($moduloId, $accion)
+    // Funciones para los botones de selección masiva
+    public function seleccionarTodo()
     {
-        $estadoActual = $this->permisosMatriz[$moduloId][$accion];
+        foreach ($this->modulos as $modulo) {
+            $this->permisosSeleccionados[$modulo->id] = [
+                'mostrar'  => true,
+                'crear'     => true,
+                'editar'   => true,
+                'eliminar' => true,
+            ];
+        }
+    }
 
-        Permiso::updateOrCreate(
-            [
-                'user_id' => $this->usuario->id,
-                'modulo_id' => $moduloId
-            ],
-            [
-                $accion => $estadoActual
-            ]
-        );
+    public function deseleccionarTodo()
+    {
+        foreach ($this->modulos as $modulo) {
+            $this->permisosSeleccionados[$modulo->id] = [
+                'mostrar'  => false,
+                'crear'     => false,
+                'editar'   => false,
+                'eliminar' => false,
+            ];
+        }
+    }
 
-        session()->flash('message', 'Permiso actualizado.');
+    public function guardar()
+    {
+        foreach ($this->permisosSeleccionados as $moduloId => $acciones) {
+            Permiso::updateOrCreate(
+                [
+                    'user_id'   => $this->user->id,
+                    'modulo_id' => $moduloId,
+                ],
+                [
+                    'mostrar'  => $acciones['mostrar'] ?? false,
+                    'crear'     => $acciones['crear'] ?? false,
+                    'editar'   => $acciones['editar'] ?? false,
+                    'eliminar' => $acciones['eliminar'] ?? false,
+                ]
+            );
+        }
+
+        session()->flash('mensaje', 'Permisos actualizados correctamente.');
     }
 
     public function render()
     {
-        return view('livewire.admin.user-permissions', [
-            'modulos' => Modulo::all()
-        ]);
-    }
-
-    public function marcarTodos()
-    {
-        $modulos = Modulo::all();
-
-        foreach ($modulos as $modulo) {
-            foreach (['mostrar', 'crear', 'editar', 'eliminar', 'gestionar'] as $accion) {
-                $this->permisosMatriz[$modulo->id][$accion] = true;
-                $this->actualizarPermiso($modulo->id, $accion);
-            }
-        }
-    }
-
-    public function desmarcarTodos()
-    {
-        $modulos = Modulo::all();
-
-        foreach ($modulos as $modulo) {
-            foreach (['mostrar', 'crear', 'editar', 'eliminar', 'gestionar'] as $accion) {
-                $this->permisosMatriz[$modulo->id][$accion] = false;
-                $this->actualizarPermiso($modulo->id, $accion);
-            }
-        }
+        return view('livewire.admin.user-permissions')
+            ->layout('layouts.app');
     }
 }
