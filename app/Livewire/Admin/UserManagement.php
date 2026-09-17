@@ -40,7 +40,13 @@ class UserManagement extends Component
                 $query->where('nombre', 'like', '%' . $this->search . '%')
                       ->orWhere('email', 'like', '%' . $this->search . '%');
             })
-            ->latest()
+
+            // El Super Administrador siempre aparece primero
+            ->orderByRaw("CASE WHEN email = 'admin@terrapago.com' THEN 0 ELSE 1 END")
+
+            // Después, los demás usuarios se ordenan por nombre
+            ->orderBy('nombre')
+
             ->paginate(10);
 
         return view('livewire.admin.user-management', [
@@ -65,19 +71,45 @@ class UserManagement extends Component
     public function editar($id)
     {
         $this->resetValidation();
+
         $user = User::findOrFail($id);
-        
+
+        // Protección del Super Administrador principal
+        if ($user->email === 'admin@terrapago.com') {
+            session()->flash(
+                'message',
+                'El Super Administrador principal no puede ser editado.'
+            );
+
+            return;
+        }
+
         $this->user_id = $user->id;
         $this->nombre  = $user->nombre;
         $this->email   = $user->email;
         $this->rol_id  = $user->rol_id;
         $this->password = '';
-        
+
         $this->isModalOpen = true;
     }
 
     public function guardar()
     {
+        // Si estamos editando un usuario existente,
+        // verificar primero que no sea el Super Administrador.
+        if (!empty($this->user_id)) {
+            $usuarioExistente = User::findOrFail($this->user_id);
+
+            if ($usuarioExistente->email === 'admin@terrapago.com') {
+                session()->flash(
+                    'message',
+                    'El Super Administrador principal no puede ser editado.'
+                );
+
+                return;
+            }
+        }
+
         $this->validate();
 
         $esNuevo = empty($this->user_id);
@@ -101,6 +133,7 @@ class UserManagement extends Component
         // Si es un usuario nuevo, inicializarle sus registros en la tabla de permisos
         if ($esNuevo) {
             $modulos = Modulo::all();
+
             foreach ($modulos as $modulo) {
                 Permiso::firstOrCreate(
                     [
@@ -109,7 +142,7 @@ class UserManagement extends Component
                     ],
                     [
                         'mostrar'  => false,
-                        'crear'     => false,
+                        'crear'    => false,
                         'editar'   => false,
                         'eliminar' => false,
                     ]
@@ -118,7 +151,11 @@ class UserManagement extends Component
         }
 
         $this->isModalOpen = false;
-        session()->flash('mensaje', 'Usuario guardado correctamente.');
+
+        session()->flash(
+            'mensaje',
+            'Usuario guardado correctamente.'
+        );
     }
 
     public function irAPermisos($id)
@@ -130,21 +167,33 @@ class UserManagement extends Component
     {
         // 1. Evitar que un usuario se elimine a sí mismo
         if (auth()->id() == $id) {
-            session()->flash('message', 'No puedes eliminar tu propia cuenta en sesión.');
+            session()->flash(
+                'message',
+                'No puedes eliminar tu propia cuenta en sesión.'
+            );
+
             return;
         }
 
         $usuario = User::findOrFail($id);
 
-        // 2. Proteger al Administrador principal
+        // 2. Proteger al Super Administrador principal
         if ($usuario->email === 'admin@terrapago.com') {
-            session()->flash('message', 'El Super Administrador principal no puede ser eliminado.');
+            session()->flash(
+                'message',
+                'El Super Administrador principal no puede ser eliminado.'
+            );
+
             return;
         }
 
-        // 3. Eliminar usuario (sus permisos se eliminan en cascada por la foreign key)
+        // 3. Eliminar usuario
+        // Sus permisos se eliminan en cascada por la foreign key
         $usuario->delete();
 
-        session()->flash('mensaje', 'Usuario eliminado correctamente.');
+        session()->flash(
+            'mensaje',
+            'Usuario eliminado correctamente.'
+        );
     }
 }

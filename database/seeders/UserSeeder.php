@@ -35,19 +35,63 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // 3. Asignar todos los permisos al Super Administrador
+        // 3. Crear Usuario Cajero de prueba
+        $cajero = User::updateOrCreate(
+            ['email' => 'cajero@terrapago.com'],
+            [
+                'nombre' => 'Cajero de Turno',
+                'password' => Hash::make('password123'),
+                'rol_id' => $cajeroRol->id,
+                'estado' => true,
+            ]
+        );
+
+        // 4. Asignar todos los permisos al Super Administrador
         $todosLosModulos = Modulo::all();
         foreach ($todosLosModulos as $modulo) {
             Permiso::updateOrCreate(
                 [
-                    'user_id' => $superAdmin->id,
+                    'user_id'   => $superAdmin->id,
                     'modulo_id' => $modulo->id,
                 ],
                 [
-                    'mostrar' => true,
-                    'alta'    => true,
-                    'editar'  => true,
-                    'eliminar'=> true,
+                    'mostrar'  => true,
+                    'crear'    => true,  // <-- AQUÍ: cambiar 'alta' por 'crear'
+                    'editar'   => true,
+                    'eliminar' => true,
+                ]
+            );
+        }
+
+        // 5. Asignar permisos iniciales al Cajero
+        $moduloCaja = Modulo::where('clave', 'caja')->first();
+        if ($moduloCaja) {
+            Permiso::updateOrCreate(
+                [
+                    'user_id'   => $cajero->id,
+                    'modulo_id' => $moduloCaja->id,
+                ],
+                [
+                    'mostrar'  => true,
+                    'crear'    => true,  // <-- AQUÍ: cambiar 'alta' por 'crear'
+                    'editar'   => false,
+                    'eliminar' => false,
+                ]
+            );
+        }
+
+        $moduloClientes = Modulo::where('clave', 'clientes')->first();
+        if ($moduloClientes) {
+            Permiso::updateOrCreate(
+                [
+                    'user_id'   => $cajero->id,
+                    'modulo_id' => $moduloClientes->id,
+                ],
+                [
+                    'mostrar'  => true,
+                    'crear'    => false, // <-- AQUÍ: cambiar 'alta' por 'crear'
+                    'editar'   => false,
+                    'eliminar' => false,
                 ]
             );
         }

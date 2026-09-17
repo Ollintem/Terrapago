@@ -17,6 +17,15 @@ class RoleManagement extends Component
 
     protected function rules()
     {
+        // Al crear un nuevo rol solamente se solicita el nombre
+        if (!$this->modoEdicion) {
+            return [
+                'nombre' => 'required|string|max:50|unique:roles,nombre',
+            ];
+        }
+
+        // Al editar un rol existente se conserva la validación
+        // de la descripción que ya tenía el sistema.
         return [
             'nombre'      => 'required|string|max:50|unique:roles,nombre,' . $this->rolId,
             'descripcion' => 'nullable|string|max:255',
@@ -39,14 +48,23 @@ class RoleManagement extends Component
 
     public function abrirModalCrear()
     {
-        $this->reset(['rolId', 'nombre', 'descripcion', 'modoEdicion']);
+        $this->reset([
+            'rolId',
+            'nombre',
+            'descripcion',
+            'modoEdicion'
+        ]);
+
         $this->resetValidation();
+
+        $this->modoEdicion = false;
         $this->modalAbierto = true;
     }
 
     public function abrirModalEditar($id)
     {
         $this->resetValidation();
+
         $rol = Role::findOrFail($id);
 
         $this->rolId = $rol->id;
@@ -66,16 +84,30 @@ class RoleManagement extends Component
     {
         $this->validate();
 
-        Role::updateOrCreate(
-            ['id' => $this->rolId],
-            [
+        // CREAR NUEVO ROL
+        if (!$this->modoEdicion) {
+
+            Role::create([
+                'nombre' => trim($this->nombre),
+            ]);
+
+        } else {
+
+            // EDITAR ROL EXISTENTE
+            $rol = Role::findOrFail($this->rolId);
+
+            $rol->update([
                 'nombre'      => trim($this->nombre),
-                'descripcion' => trim($this->descripcion),
-            ]
-        );
+                'descripcion' => trim($this->descripcion ?? ''),
+            ]);
+        }
 
         $this->cerrarModal();
-        session()->flash('mensaje', 'Rol guardado exitosamente.');
+
+        session()->flash(
+            'mensaje',
+            'Rol guardado exitosamente.'
+        );
     }
 
     public function eliminar($id)
@@ -83,18 +115,39 @@ class RoleManagement extends Component
         $rol = Role::withCount('users')->findOrFail($id);
 
         // Protección 1: No eliminar el rol de Administrador
-        if (in_array(strtolower($rol->nombre), ['administrador', 'super admin', 'superadministrador'])) {
-            session()->flash('error', 'El rol principal de Administrador no puede ser eliminado.');
+        if (
+            in_array(
+                strtolower($rol->nombre),
+                [
+                    'administrador',
+                    'super admin',
+                    'superadministrador'
+                ]
+            )
+        ) {
+            session()->flash(
+                'error',
+                'El rol principal de Administrador no puede ser eliminado.'
+            );
+
             return;
         }
 
         // Protección 2: Evitar eliminación si hay usuarios asignados a este rol
         if ($rol->users_count > 0) {
-            session()->flash('error', "No se puede eliminar '{$rol->nombre}': tiene {$rol->users_count} usuario(s) asignado(s). Reasígnalos primero.");
+            session()->flash(
+                'error',
+                "No se puede eliminar '{$rol->nombre}': tiene {$rol->users_count} usuario(s) asignado(s). Reasígnalos primero."
+            );
+
             return;
         }
 
         $rol->delete();
-        session()->flash('mensaje', 'Rol eliminado correctamente.');
+
+        session()->flash(
+            'mensaje',
+            'Rol eliminado correctamente.'
+        );
     }
 }
