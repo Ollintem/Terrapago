@@ -35,18 +35,7 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // 3. Crear Usuario Cajero de prueba
-        $cajero = User::updateOrCreate(
-            ['email' => 'cajero@terrapago.com'],
-            [
-                'nombre' => 'Cajero de Turno',
-                'password' => Hash::make('password123'),
-                'rol_id' => $cajeroRol->id,
-                'estado' => true,
-            ]
-        );
-
-        // 4. Asignar todos los permisos al Super Administrador
+        // 3. Asignar todos los permisos al Super Administrador
         $todosLosModulos = Modulo::all();
         foreach ($todosLosModulos as $modulo) {
             Permiso::updateOrCreate(
@@ -56,26 +45,9 @@ class UserSeeder extends Seeder
                 ],
                 [
                     'mostrar'  => true,
-                    'crear'    => true,  // <-- AQUÍ: cambiar 'alta' por 'crear'
+                    'crear'    => true,  
                     'editar'   => true,
                     'eliminar' => true,
-                ]
-            );
-        }
-
-        // 5. Asignar permisos iniciales al Cajero
-        $moduloCaja = Modulo::where('clave', 'caja')->first();
-        if ($moduloCaja) {
-            Permiso::updateOrCreate(
-                [
-                    'user_id'   => $cajero->id,
-                    'modulo_id' => $moduloCaja->id,
-                ],
-                [
-                    'mostrar'  => true,
-                    'crear'    => true,  // <-- AQUÍ: cambiar 'alta' por 'crear'
-                    'editar'   => false,
-                    'eliminar' => false,
                 ]
             );
         }
@@ -89,7 +61,7 @@ class UserSeeder extends Seeder
                 ],
                 [
                     'mostrar'  => true,
-                    'crear'    => false, // <-- AQUÍ: cambiar 'alta' por 'crear'
+                    'crear'    => false, 
                     'editar'   => false,
                     'eliminar' => false,
                 ]

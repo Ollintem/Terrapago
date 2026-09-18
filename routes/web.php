@@ -101,27 +101,9 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     // MÓDULO: CLIENTES (Alias: clientes) - Estructura CRUD
     // ==========================================
-    /*
-    Route::get('/clientes', [ClienteController::class, 'index'])
+    Route::get('/admin/clientes', App\Livewire\Admin\ClientManagement::class)
         ->name('clientes.index')
         ->middleware('permiso:clientes,mostrar');
-    Route::get('/clientes/crear', [ClienteController::class, 'create'])
-        ->name('clientes.create')
-        ->middleware('permiso:clientes,alta');
-    Route::post('/clientes', [ClienteController::class, 'store'])
-        ->name('clientes.store')
-        ->middleware('permiso:clientes,alta');
-    Route::get('/clientes/{cliente}/editar', [ClienteController::class, 'edit'])
-        ->name('clientes.edit')
-        ->middleware('permiso:clientes,editar');
-    Route::put('/clientes/{cliente}', [ClienteController::class, 'update'])
-        ->name('clientes.update')
-        ->middleware('permiso:clientes,editar');
-    Route::delete('/clientes/{cliente}', [ClienteController::class, 'destroy'])
-        ->name('clientes.destroy')
-        ->middleware('permiso:clientes,eliminar');
-    */
-
 
     // ==========================================
     // MÓDULO: COBRANZA Y CAJA (Alias: caja)
@@ -139,9 +121,15 @@ Route::middleware(['auth'])->group(function () {
     // ==========================================
     // MÓDULO: TERRENOS (Alias: terrenos)
     // ==========================================
-    /*
-    Route::get('/terrenos', [TerrenoController::class, 'index'])
+    Route::get('/admin/terrenos', App\Livewire\Admin\TerrenoManagement::class)
         ->name('terrenos.index')
         ->middleware('permiso:terrenos,mostrar');
-    */
+    
+    // ==========================================
+    // MÓDULO: CONTRATOS (Alias: contratos)
+    // ==========================================
+    Route::get('/admin/contratos', App\Livewire\Admin\ContratoManagement::class)
+        ->name('contratos.index')
+        ->middleware('permiso:contratos,mostrar');
+        
 });
