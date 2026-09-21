@@ -32,6 +32,22 @@ class RoleManagement extends Component
         ];
     }
 
+    /**
+     * Mensajes personalizados de validación.
+     */
+    protected function messages()
+    {
+        return [
+            'nombre.required' => 'El nombre del puesto es obligatorio.',
+            'nombre.string'   => 'El nombre del puesto debe ser texto.',
+            'nombre.max'      => 'El nombre del puesto no puede tener más de 50 caracteres.',
+            'nombre.unique'   => 'Ya existe un puesto o rol con ese nombre.',
+
+            'descripcion.string' => 'La descripción debe ser texto.',
+            'descripcion.max'    => 'La descripción no puede tener más de 255 caracteres.',
+        ];
+    }
+
     public function render()
     {
         $roles = Role::withCount('users')
@@ -106,7 +122,7 @@ class RoleManagement extends Component
 
         session()->flash(
             'mensaje',
-            'Rol guardado exitosamente.'
+            'Rol guardado correctamente.'
         );
     }
 
@@ -114,7 +130,7 @@ class RoleManagement extends Component
     {
         $rol = Role::withCount('users')->findOrFail($id);
 
-        // Protección 1: No eliminar el rol de Administrador
+        // Protección 1: No eliminar los roles principales
         if (
             in_array(
                 strtolower($rol->nombre),
@@ -133,7 +149,7 @@ class RoleManagement extends Component
             return;
         }
 
-        // Protección 2: Evitar eliminación si hay usuarios asignados a este rol
+        // Protección 2: Evitar eliminación si hay usuarios asignados
         if ($rol->users_count > 0) {
             session()->flash(
                 'error',

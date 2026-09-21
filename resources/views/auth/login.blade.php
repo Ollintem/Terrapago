@@ -230,24 +230,32 @@
                     <!-- TERRAPAGO DESTACADO -->
                     <!-- ================================================= -->
 
-                    <h1 class="mt-5
-                               text-4xl
-                               sm:text-[2.7rem]
-                               font-black
-                               tracking-[-0.04em]
-                               leading-none
+                    <div class="w-full flex justify-center px-2 overflow-visible">
 
-                               bg-gradient-to-r
-                               from-white
-                               via-white
-                               to-emerald-400
+                        <h1 class="mt-5
+                                   inline-block
+                                   w-full
+                                   text-4xl
+                                   sm:text-[2.7rem]
+                                   font-black
+                                   tracking-[-0.04em]
+                                   leading-[1.15]
+                                   pb-1
 
-                               bg-clip-text
-                               text-transparent">
+                                   bg-gradient-to-r
+                                   from-white
+                                   via-white
+                                   to-emerald-400
 
-                        TerraPago
+                                   bg-clip-text
+                                   text-transparent
+                                   overflow-visible">
 
-                    </h1>
+                            TerraPago
+
+                        </h1>
+
+                    </div>
 
 
                     <!-- Línea decorativa -->

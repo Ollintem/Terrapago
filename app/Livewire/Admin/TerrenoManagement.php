@@ -23,6 +23,11 @@ class TerrenoManagement extends Component
     public $estado = 'DISPONIBLE';
     public $ubicacion;
 
+    /*
+    |--------------------------------------------------------------------------
+    | REGLAS DE VALIDACIÓN
+    |--------------------------------------------------------------------------
+    */
     protected function rules()
     {
         return [
@@ -36,16 +41,75 @@ class TerrenoManagement extends Component
         ];
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | MENSAJES DE VALIDACIÓN EN ESPAÑOL
+    |--------------------------------------------------------------------------
+    */
+    protected function messages()
+    {
+        return [
+
+            // Manzana
+            'manzana.required' => 'La manzana es obligatoria.',
+            'manzana.string'   => 'La manzana debe ser texto.',
+            'manzana.max'      => 'La manzana no puede tener más de 20 caracteres.',
+
+            // Lote
+            'lote.required' => 'El número de lote es obligatorio.',
+            'lote.string'   => 'El lote debe ser texto.',
+            'lote.max'      => 'El lote no puede tener más de 20 caracteres.',
+
+            // Superficie
+            'superficie.required' => 'La superficie es obligatoria.',
+            'superficie.numeric'  => 'La superficie debe ser un número válido.',
+            'superficie.min'      => 'La superficie debe ser mayor a 0.',
+
+            // Medidas
+            'medidas.required' => 'Las medidas son obligatorias.',
+            'medidas.string'   => 'Las medidas deben ser texto.',
+            'medidas.max'      => 'Las medidas no pueden tener más de 50 caracteres.',
+
+            // Ubicación
+            'ubicacion.string' => 'La ubicación debe ser texto.',
+            'ubicacion.max'    => 'La ubicación no puede tener más de 150 caracteres.',
+
+            // Precio
+            'precio.required' => 'El precio es obligatorio.',
+            'precio.numeric'  => 'El precio debe ser un número válido.',
+            'precio.min'      => 'El precio debe ser mayor a 0.',
+
+            // Estado
+            'estado.required' => 'El estado es obligatorio.',
+            'estado.in'      => 'El estado seleccionado no es válido.',
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACTUALIZACIÓN DEL BUSCADOR
+    |--------------------------------------------------------------------------
+    */
     public function updatingSearch()
     {
         $this->resetPage();
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | ACTUALIZACIÓN DEL FILTRO
+    |--------------------------------------------------------------------------
+    */
     public function updatingFiltroEstado()
     {
         $this->resetPage();
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | MOSTRAR TERRENOS
+    |--------------------------------------------------------------------------
+    */
     public function render()
     {
         $terrenos = Terreno::query()
@@ -54,31 +118,95 @@ class TerrenoManagement extends Component
             })
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('manzana', 'like', '%' . $this->search . '%')
-                      ->orWhere('lote', 'like', '%' . $this->search . '%')
-                      ->orWhere('ubicacion', 'like', '%' . $this->search . '%')
-                      ->orWhere('precio', 'like', '%' . $this->search . '%');
+                    $q->where(
+                        'manzana',
+                        'like',
+                        '%' . $this->search . '%'
+                    )
+                    ->orWhere(
+                        'lote',
+                        'like',
+                        '%' . $this->search . '%'
+                    )
+                    ->orWhere(
+                        'ubicacion',
+                        'like',
+                        '%' . $this->search . '%'
+                    )
+                    ->orWhere(
+                        'precio',
+                        'like',
+                        '%' . $this->search . '%'
+                    );
                 });
             })
-            ->latest()
-            ->paginate(10);
+            ->orderBy('manzana')
+            ->orderBy('lote')
+            ->paginate(12);
 
-        return view('livewire.admin.terreno-management', [
-            'terrenos' => $terrenos,
-        ])->layout('layouts.app');
+        // Totales generales del inventario
+        $totalTerrenos = Terreno::count();
+
+        $totalDisponibles = Terreno::where(
+            'estado',
+            'DISPONIBLE'
+        )->count();
+
+        $totalApartados = Terreno::where(
+            'estado',
+            'APARTADO'
+        )->count();
+
+        $totalVendidos = Terreno::where(
+            'estado',
+            'VENDIDO'
+        )->count();
+
+        return view(
+            'livewire.admin.terreno-management',
+            [
+                'terrenos'         => $terrenos,
+                'totalTerrenos'    => $totalTerrenos,
+                'totalDisponibles' => $totalDisponibles,
+                'totalApartados'   => $totalApartados,
+                'totalVendidos'    => $totalVendidos,
+            ]
+        )->layout('layouts.app');
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | ABRIR MODAL PARA CREAR
+    |--------------------------------------------------------------------------
+    */
     public function abrirModalCrear()
     {
-        $this->reset(['terrenoId', 'manzana', 'lote', 'medidas', 'superficie', 'precio', 'ubicacion']);
+        $this->reset([
+            'terrenoId',
+            'manzana',
+            'lote',
+            'medidas',
+            'superficie',
+            'precio',
+            'ubicacion'
+        ]);
+
         $this->estado = 'DISPONIBLE';
+
         $this->resetValidation();
+
         $this->modalAbierto = true;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | ABRIR MODAL PARA EDITAR
+    |--------------------------------------------------------------------------
+    */
     public function abrirModalEditar($id)
     {
         $this->resetValidation();
+
         $terreno = Terreno::findOrFail($id);
 
         $this->terrenoId  = $terreno->id;
@@ -93,53 +221,147 @@ class TerrenoManagement extends Component
         $this->modalAbierto = true;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | CERRAR MODAL
+    |--------------------------------------------------------------------------
+    */
     public function cerrarModal()
     {
         $this->resetValidation();
+
         $this->modalAbierto = false;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | GUARDAR / ACTUALIZAR TERRENO
+    |--------------------------------------------------------------------------
+    */
     public function guardar()
     {
+        // Ejecutar validaciones
         $this->validate();
 
-        $existe = Terreno::where('manzana', trim($this->manzana))
-            ->where('lote', trim($this->lote))
-            ->when($this->terrenoId, fn($q) => $q->where('id', '!=', $this->terrenoId))
+        /*
+        |--------------------------------------------------------------------------
+        | COMPROBAR MANZANA + LOTE DUPLICADO
+        |--------------------------------------------------------------------------
+        */
+        $existe = Terreno::where(
+            'manzana',
+            trim($this->manzana)
+        )
+            ->where(
+                'lote',
+                trim($this->lote)
+            )
+            ->when(
+                $this->terrenoId,
+                fn($q) => $q->where(
+                    'id',
+                    '!=',
+                    $this->terrenoId
+                )
+            )
             ->exists();
 
         if ($existe) {
-            $this->addError('lote', 'Ya existe un terreno con esa misma Manzana y Lote.');
+
+            $this->addError(
+                'lote',
+                'Ya existe un terreno con esa misma Manzana y Lote.'
+            );
+
             return;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | CREAR O ACTUALIZAR
+        |--------------------------------------------------------------------------
+        */
+        $idActual = $this->terrenoId;
+
         Terreno::updateOrCreate(
-            ['id' => $this->terrenoId],
             [
-                'manzana'    => trim($this->manzana),
-                'lote'       => trim($this->lote),
+                'id' => $this->terrenoId
+            ],
+            [
+                'manzana' => trim($this->manzana),
+
+                'lote' => trim($this->lote),
+
                 'superficie' => $this->superficie,
-                'medidas'    => trim($this->medidas),
-                'ubicacion'  => $this->ubicacion ? trim($this->ubicacion) : null,
-                'precio'     => $this->precio,
-                'estado'     => $this->estado,
+
+                'medidas' => trim($this->medidas),
+
+                'ubicacion' => $this->ubicacion
+                    ? trim($this->ubicacion)
+                    : null,
+
+                'precio' => $this->precio,
+
+                'estado' => $this->estado,
             ]
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | CERRAR MODAL
+        |--------------------------------------------------------------------------
+        */
         $this->cerrarModal();
-        session()->flash('mensaje', 'Terreno registrado correctamente.');
+
+        /*
+        |--------------------------------------------------------------------------
+        | MENSAJE DE ÉXITO
+        |--------------------------------------------------------------------------
+        */
+        session()->flash(
+            'mensaje',
+            $idActual
+                ? 'Terreno actualizado correctamente.'
+                : 'Terreno registrado correctamente.'
+        );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | ELIMINAR TERRENO
+    |--------------------------------------------------------------------------
+    */
     public function eliminar($id)
     {
-        $terreno = Terreno::withCount('contratos')->findOrFail($id);
+        $terreno = Terreno::withCount(
+            'contratos'
+        )->findOrFail($id);
 
+        /*
+        |--------------------------------------------------------------------------
+        | NO ELIMINAR SI TIENE CONTRATOS
+        |--------------------------------------------------------------------------
+        */
         if ($terreno->contratos_count > 0) {
-            session()->flash('error', "No se puede eliminar el lote {$terreno->ubicacion_completa} porque cuenta con {$terreno->contratos_count} contrato(s) asociado(s).");
+
+            session()->flash(
+                'error',
+                "No se puede eliminar el lote {$terreno->ubicacion_completa} porque cuenta con {$terreno->contratos_count} contrato(s) asociado(s)."
+            );
+
             return;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | ELIMINAR
+        |--------------------------------------------------------------------------
+        */
         $terreno->delete();
-        session()->flash('mensaje', 'Terreno eliminado del inventario.');
+
+        session()->flash(
+            'mensaje',
+            'Terreno eliminado del inventario.'
+        );
     }
 }
