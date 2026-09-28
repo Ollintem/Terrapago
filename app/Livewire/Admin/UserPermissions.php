@@ -81,7 +81,7 @@ class UserPermissions extends Component
 
     public function render()
     {
-        return view('livewire.admin.user-permissions')
+        return view('livewire.admin.usuarios.permissions')
             ->layout('layouts.app');
     }
-}
+} 

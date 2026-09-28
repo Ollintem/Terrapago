@@ -26,6 +26,8 @@ class User extends Authenticatable
         'ultimo_acceso',
     ];
 
+    
+
     /**
      * Relación con el rol del usuario.
      */
@@ -63,6 +65,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'estado' => 'boolean',
+            'ultimo_acceso' => 'datetime',
         ];
     }
 

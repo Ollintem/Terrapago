@@ -92,36 +92,34 @@
 
 
     {{-- =========================================================
-         MENSAJE DE ÉXITO
+        MENSAJES CON AUTODESAPARICIÓN (5 SEGUNDOS)
     ========================================================== --}}
     @if (session()->has('mensaje'))
-
-        <div class="bg-emerald-50 border-l-4 border-emerald-500
-                    text-emerald-700 p-4 mb-4 rounded-r-lg">
-
-            <p class="text-sm font-semibold">
-                {{ session('mensaje') }}
-            </p>
-
+        <div 
+            x-data="{ show: true }" 
+            x-init="setTimeout(() => show = false, 5000)" 
+            x-show="show" 
+            x-transition:leave="transition ease-in duration-500" 
+            x-transition:leave-start="opacity-100 transform scale-100" 
+            x-transition:leave-end="opacity-0 transform -translate-y-2"
+            class="flex items-center justify-between bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 p-4 mb-4 rounded-r-lg">
+            <p class="text-sm font-semibold">{{ session('mensaje') }}</p>
+            <button type="button" @click="show = false" class="text-emerald-500 hover:text-emerald-700 font-bold cursor-pointer">✕</button>
         </div>
-
     @endif
 
-
-    {{-- =========================================================
-         MENSAJE DE ERROR
-    ========================================================== --}}
     @if (session()->has('error'))
-
-        <div class="bg-rose-50 border-l-4 border-rose-500
-                    text-rose-700 p-4 mb-4 rounded-r-lg">
-
-            <p class="text-sm font-semibold">
-                {{ session('error') }}
-            </p>
-
+        <div 
+            x-data="{ show: true }" 
+            x-init="setTimeout(() => show = false, 5000)" 
+            x-show="show" 
+            x-transition:leave="transition ease-in duration-500" 
+            x-transition:leave-start="opacity-100 transform scale-100" 
+            x-transition:leave-end="opacity-0 transform -translate-y-2"
+            class="flex items-center justify-between bg-rose-50 border-l-4 border-rose-500 text-rose-700 p-4 mb-4 rounded-r-lg">
+            <p class="text-sm font-semibold">{{ session('error') }}</p>
+            <button type="button" @click="show = false" class="text-rose-500 hover:text-rose-700 font-bold cursor-pointer">✕</button>
         </div>
-
     @endif
 
 
@@ -495,191 +493,10 @@
 
     </div>
 
-
     {{-- =========================================================
-         MODAL CREAR / EDITAR
+        INCLUSIÓN DEL MODAL DE ROL Y PERMISOS
     ========================================================== --}}
-    @if($modalAbierto)
+    @include('livewire.admin.roles.create')
 
-        <div
-            class="fixed inset-0
-                   bg-slate-900/50
-                   backdrop-blur-sm
-                   flex items-center justify-center
-                   p-4
-                   z-50"
-        >
-
-            <div
-                class="bg-white rounded-2xl
-                       shadow-2xl
-                       w-full max-w-md
-                       p-6"
-            >
-
-
-                {{-- =================================================
-                     ENCABEZADO DEL MODAL
-                ================================================== --}}
-                <div class="flex items-center gap-3 mb-5">
-
-                    <div
-                        class="w-10 h-10 rounded-xl
-                               bg-emerald-50
-                               text-emerald-600
-                               flex items-center justify-center"
-                    >
-
-                        <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 4v16m8-8H4"
-                            />
-
-                        </svg>
-
-                    </div>
-
-
-                    <div>
-
-                        <h3 class="text-lg font-bold tracking-tight text-slate-900">
-
-                            {{ $modoEdicion
-                                ? 'Editar Puesto / Rol'
-                                : 'Registrar Nuevo Puesto'
-                            }}
-
-                        </h3>
-
-                        <p class="text-xs text-slate-400 font-medium">
-
-                            {{ $modoEdicion
-                                ? 'Actualiza la información del puesto.'
-                                : 'Ingresa el nombre del nuevo puesto.'
-                            }}
-
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                {{-- =================================================
-                     FORMULARIO
-                ================================================== --}}
-                <form
-                    wire:submit.prevent="guardar"
-                    novalidate
-                    class="space-y-4"
-                >
-
-
-                    {{-- NOMBRE DEL PUESTO --}}
-                    <div>
-
-                        <label
-                            class="block text-xs font-bold
-                                   text-slate-600
-                                   uppercase tracking-wide
-                                   mb-1.5"
-                        >
-
-                            Nombre del Puesto
-
-                        </label>
-
-
-                        <input
-                            type="text"
-                            wire:model="nombre"
-
-                            class="w-full px-3 py-2.5
-                                   border border-slate-300
-                                   rounded-lg
-                                   text-sm font-medium
-                                   placeholder:text-slate-400
-                                   focus:ring-2
-                                   focus:ring-emerald-500/30
-                                   focus:border-emerald-500
-                                   focus:outline-none
-                                   transition"
-
-                            placeholder="Ej. Cobrador en Campo"
-                        >
-
-
-                        @error('nombre')
-
-                            <span class="block mt-1.5 text-xs text-rose-500 font-medium">
-
-                                {{ $message }}
-
-                            </span>
-
-                        @enderror
-
-                    </div>
-
-
-                    {{-- BOTONES --}}
-                    <div class="mt-6 flex justify-end gap-3">
-
-                        <button
-                            type="button"
-                            wire:click="cerrarModal"
-
-                            class="px-4 py-2.5
-                                   border border-slate-300
-                                   text-slate-600
-                                   rounded-lg
-                                   text-sm font-semibold
-                                   hover:bg-slate-50
-                                   transition
-                                   cursor-pointer"
-                        >
-
-                            Cancelar
-
-                        </button>
-
-
-                        <button
-                            type="submit"
-
-                            class="px-4 py-2.5
-                                   bg-emerald-600
-                                   text-white
-                                   rounded-lg
-                                   text-sm font-semibold
-                                   hover:bg-emerald-700
-                                   shadow-sm
-                                   shadow-emerald-600/20
-                                   transition
-                                   cursor-pointer"
-                        >
-
-                            {{ $modoEdicion ? 'Actualizar' : 'Guardar' }}
-
-                        </button>
-
-                    </div>
-
-                </form>
-
-            </div>
-
-        </div>
-
-    @endif
 
 </div>

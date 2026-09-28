@@ -57,7 +57,7 @@ class RoleManagement extends Component
             })
             ->get();
 
-        return view('livewire.admin.role-management', [
+        return view('livewire.admin.roles.index', [
             'roles' => $roles,
         ])->layout('layouts.app');
     }

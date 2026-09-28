@@ -180,7 +180,7 @@ class ClientManagement extends Component
             ->latest()
             ->paginate(10);
 
-        return view('livewire.admin.client-management', [
+        return view('livewire.admin.clientes.index', [
             'clientes' => $clientes,
             'esAdmin'  => $esAdmin,
         ])->layout('layouts.app');

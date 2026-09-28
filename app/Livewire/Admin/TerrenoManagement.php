@@ -163,7 +163,7 @@ class TerrenoManagement extends Component
         )->count();
 
         return view(
-            'livewire.admin.terreno-management',
+            'livewire.admin.terrenos.index',
             [
                 'terrenos'         => $terrenos,
                 'totalTerrenos'    => $totalTerrenos,

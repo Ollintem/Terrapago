@@ -127,43 +127,35 @@
     </div>
 
 
-    {{-- ========================================================= --}}
-    {{-- NOTIFICACIONES FLASH --}}
-    {{-- ========================================================= --}}
-
+    {{-- =========================================================
+        NOTIFICACIONES FLASH (5 SEGUNDOS)
+    ========================================================== --}}
     @if (session()->has('mensaje'))
-
-        <div class="bg-emerald-50
-                    border-l-4
-                    border-emerald-500
-                    text-emerald-700
-                    p-4
-                    rounded-r-lg">
-
-            <p class="text-sm font-medium">
-                {{ session('mensaje') }}
-            </p>
-
+        <div 
+            x-data="{ show: true }" 
+            x-init="setTimeout(() => show = false, 5000)" 
+            x-show="show" 
+            x-transition:leave="transition ease-in duration-500" 
+            x-transition:leave-start="opacity-100 transform scale-100" 
+            x-transition:leave-end="opacity-0 transform -translate-y-2"
+            class="flex items-center justify-between bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 p-4 rounded-r-lg mb-4">
+            <p class="text-sm font-semibold">{{ session('mensaje') }}</p>
+            <button type="button" @click="show = false" class="text-emerald-500 hover:text-emerald-700 font-bold cursor-pointer">✕</button>
         </div>
-
     @endif
 
-
-    @if (session()->has('message'))
-
-        <div class="bg-emerald-50
-                    border-l-4
-                    border-emerald-500
-                    text-emerald-700
-                    p-4
-                    rounded-r-lg">
-
-            <p class="text-sm font-medium">
-                {{ session('message') }}
-            </p>
-
+    @if (session()->has('error'))
+        <div 
+            x-data="{ show: true }" 
+            x-init="setTimeout(() => show = false, 5000)" 
+            x-show="show" 
+            x-transition:leave="transition ease-in duration-500" 
+            x-transition:leave-start="opacity-100 transform scale-100" 
+            x-transition:leave-end="opacity-0 transform -translate-y-2"
+            class="flex items-center justify-between bg-rose-50 border-l-4 border-rose-500 text-rose-700 p-4 rounded-r-lg mb-4">
+            <p class="text-sm font-semibold">{{ session('error') }}</p>
+            <button type="button" @click="show = false" class="text-rose-500 hover:text-rose-700 font-bold cursor-pointer">✕</button>
         </div>
-
     @endif
 
 

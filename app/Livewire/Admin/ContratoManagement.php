@@ -109,7 +109,7 @@ class ContratoManagement extends Component
             ->orderBy('lote')
             ->get();
 
-        return view('livewire.admin.contrato-management', [
+        return view('livewire.admin.contratos.index', [
             'contratos'           => $contratos,
             'clientesDisponibles' => $clientesDisponibles,
             'terrenosDisponibles' => $terrenosDisponibles,
