@@ -8,7 +8,14 @@
     @livewireStyles
 </head>
 <body 
-    x-data="{ sidebarAbierto: true }" 
+    x-data="{ 
+        // Si no existe valor previo en localStorage, arranca cerrado (false)
+        sidebarAbierto: localStorage.getItem('sidebarAbierto') === 'true',
+        toggleSidebar() {
+            this.sidebarAbierto = !this.sidebarAbierto;
+            localStorage.setItem('sidebarAbierto', this.sidebarAbierto);
+        }
+    }" 
     class="bg-slate-50 text-slate-800 antialiased flex h-screen overflow-hidden">
 
     @auth
@@ -24,14 +31,14 @@
             };
         @endphp
 
-        <!-- SIDEBAR A MAILEMMENG A NAAN-ANAY -->
+        <!-- BARRA LATERAL (SIDEBAR) CON COLAPSO TOTAL -->
         <aside 
             :class="sidebarAbierto ? 'w-64' : 'w-0'"
             class="bg-[#0f172a] text-slate-300 flex flex-col justify-between flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden z-30">
 
             <div class="w-64 flex flex-col justify-between h-full">
                 <div>
-                    <!-- Header Marca -->
+                    <!-- Encabezado y Marca -->
                     <div class="p-6 flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <div class="h-10 w-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-emerald-500/30 flex-shrink-0">
@@ -43,11 +50,11 @@
                             </div>
                         </div>
 
-                        <!-- HAMBURGER BUTTON ITI UNEG TI SIDEBAR -->
+                        <!-- BOTÓN HAMBURGUESA DENTRO DEL SIDEBAR (OCULTAR) -->
                         <button 
                             type="button"
-                            @click="sidebarAbierto = false"
-                            title="Ilemmeng ti sidebar"
+                            @click="toggleSidebar()"
+                            title="Ocultar menú lateral"
                             class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer transition">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -152,16 +159,16 @@
         </aside>
     @endauth
 
-    <!-- PUNTO A PAGLAOKAN TI LINAON KEN TI BOTON A HAMBURGER NO NAIPULLAT TI SIDEBAR -->
+    <!-- ÁREA DE CONTENIDO PRINCIPAL Y BOTÓN DE APERTURA -->
     <main class="flex-1 flex flex-col overflow-y-auto min-w-0">
         
         @auth
-            <!-- TOPBAR/HEADER A PAGPARANGAN TI HAMBURGER BUTTON NO NAILEMMENG TI SIDEBAR -->
+            <!-- ENCABEZADO SUPERIOR PARA MOSTRAR EL BOTÓN CUANDO EL SIDEBAR ESTÁ OCULTO -->
             <div x-show="!sidebarAbierto" class="p-4 pb-0 flex items-center">
                 <button 
                     type="button"
-                    @click="sidebarAbierto = true"
-                    title="Luktan ti sidebar"
+                    @click="toggleSidebar()"
+                    title="Mostrar menú lateral"
                     class="p-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-emerald-600 shadow-sm cursor-pointer transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
