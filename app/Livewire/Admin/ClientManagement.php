@@ -4,8 +4,8 @@ namespace App\Livewire\Admin;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use App\Models\Cliente;
-use App\Http\Requests\ClientRequest;
 
 class ClientManagement extends Component
 {
@@ -15,7 +15,10 @@ class ClientManagement extends Component
     public $modalAbierto = false;
     public $clienteId;
 
-    // Campos acordes a la migración
+    // =========================================================
+    // CAMPOS DEL CLIENTE
+    // =========================================================
+
     public $nombre;
     public $apellido_paterno;
     public $apellido_materno;
@@ -25,27 +28,49 @@ class ClientManagement extends Component
     public $direccion;
     public $curp;
     public $rfc;
-    public $estado = true;
+
+
+    // =========================================================
+    // REGLAS DE VALIDACIÓN
+    // =========================================================
 
     protected function rules()
     {
         return [
-            'nombre'           => 'required|string|max:100',
-            'apellido_paterno' => 'required|string|max:100',
-            'apellido_materno' => 'nullable|string|max:100',
-            'fecha_nacimiento' => 'nullable|date',
-            'telefono'         => 'required|string|max:20',
-            'email'            => 'nullable|email|max:150|unique:clientes,email,' . $this->clienteId,
-            'direccion'        => 'nullable|string',
-            'curp'             => 'nullable|string|max:20',
-            'rfc'              => 'nullable|string|max:20',
-            'estado'           => 'boolean',
+            'nombre' =>
+                'required|string|max:100',
+
+            'apellido_paterno' =>
+                'required|string|max:100',
+
+            'apellido_materno' =>
+                'nullable|string|max:100',
+
+            'fecha_nacimiento' =>
+                'nullable|date',
+
+            'telefono' =>
+                'required|string|max:20',
+
+            'email' =>
+                'nullable|email|max:150|unique:clientes,email,' . $this->clienteId,
+
+            'direccion' =>
+                'nullable|string',
+
+            'curp' =>
+                'nullable|string|max:20',
+
+            'rfc' =>
+                'nullable|string|max:20',
         ];
     }
 
-    /**
-     * Mensajes personalizados de validación.
-     */
+
+    // =========================================================
+    // MENSAJES DE VALIDACIÓN
+    // =========================================================
+
     protected function messages()
     {
         return [
@@ -108,83 +133,285 @@ class ClientManagement extends Component
 
             'rfc.max' =>
                 'El RFC no puede tener más de 20 caracteres.',
-
-            'estado.boolean' =>
-                'El estado seleccionado no es válido.',
         ];
     }
+
+
+    // =========================================================
+    // BÚSQUEDA
+    // =========================================================
 
     public function updatingSearch()
     {
         $this->resetPage();
     }
 
+
+    // =========================================================
+    // ACTUALIZACIÓN DESPUÉS DE UN PAGO
+    // =========================================================
+
+    #[On('pago-registrado')]
+    public function actualizarDespuesDePago()
+    {
+        /*
+         * No necesitamos modificar manualmente los datos.
+         *
+         * Livewire volverá a ejecutar render(), por lo que:
+         *
+         * - se vuelven a consultar los clientes
+         * - se vuelven a consultar sus contratos
+         * - se vuelven a consultar sus cuotas
+         * - se recalculan las estadísticas
+         * - se muestra el nuevo saldo_actual
+         * - se actualiza el estado de la cuenta
+         */
+    }
+
+
+    // =========================================================
+    // RENDER
+    // =========================================================
+
     public function render()
     {
         $user = auth()->user();
 
+
+        // =====================================================
+        // DETERMINAR SI EL USUARIO ES ADMINISTRADOR
+        // =====================================================
+
         $esAdmin = $user->rol &&
             in_array(
                 strtolower($user->rol->nombre),
-                ['administrador', 'super admin', 'superadministrador']
+                [
+                    'administrador',
+                    'super admin',
+                    'superadministrador'
+                ]
             );
 
-        $clientes = Cliente::with([
+
+        // =====================================================
+        // CONSULTA BASE DE CLIENTES
+        // =====================================================
+
+        $consultaClientes = Cliente::with([
             'asesor',
             'contratos.terreno',
             'contratos.cuotas',
-        ])
-            // Si no es admin, solo ve sus propios clientes
-            ->when(!$esAdmin, function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where(
-                        'nombre',
-                        'like',
-                        '%' . $this->search . '%'
-                    )
-                    ->orWhere(
-                        'apellido_paterno',
-                        'like',
-                        '%' . $this->search . '%'
-                    )
-                    ->orWhere(
-                        'apellido_materno',
-                        'like',
-                        '%' . $this->search . '%'
-                    )
-                    ->orWhere(
-                        'telefono',
-                        'like',
-                        '%' . $this->search . '%'
-                    )
-                    ->orWhere(
-                        'rfc',
-                        'like',
-                        '%' . $this->search . '%'
-                    )
-                    ->orWhere(
-                        'curp',
-                        'like',
-                        '%' . $this->search . '%'
-                    )
-                    ->orWhere(
-                        'email',
-                        'like',
-                        '%' . $this->search . '%'
-                    );
-                });
-            })
-            ->latest()
-            ->paginate(10);
+        ]);
 
-        return view('livewire.admin.clientes.index', [
-            'clientes' => $clientes,
-            'esAdmin'  => $esAdmin,
-        ])->layout('layouts.app');
+
+        // =====================================================
+        // RESTRICCIÓN PARA USUARIOS NO ADMINISTRADORES
+        // =====================================================
+
+        if (!$esAdmin) {
+
+            $consultaClientes->where(
+                'user_id',
+                $user->id
+            );
+        }
+
+
+        // =====================================================
+        // BÚSQUEDA
+        // =====================================================
+
+        if ($this->search) {
+
+            $consultaClientes->where(function ($q) {
+
+                $q->where(
+                    'nombre',
+                    'like',
+                    '%' . $this->search . '%'
+                )
+
+                ->orWhere(
+                    'apellido_paterno',
+                    'like',
+                    '%' . $this->search . '%'
+                )
+
+                ->orWhere(
+                    'apellido_materno',
+                    'like',
+                    '%' . $this->search . '%'
+                )
+
+                ->orWhere(
+                    'telefono',
+                    'like',
+                    '%' . $this->search . '%'
+                )
+
+                ->orWhere(
+                    'rfc',
+                    'like',
+                    '%' . $this->search . '%'
+                )
+
+                ->orWhere(
+                    'curp',
+                    'like',
+                    '%' . $this->search . '%'
+                )
+
+                ->orWhere(
+                    'email',
+                    'like',
+                    '%' . $this->search . '%'
+                );
+            });
+        }
+
+
+        // =====================================================
+        // ESTADÍSTICAS
+        //
+        // Se calculan ANTES de paginar para que no se limiten
+        // únicamente a los 10 clientes mostrados en pantalla.
+        //
+        // Respetan:
+        // - usuario administrador
+        // - usuario normal
+        // - búsqueda actual
+        // =====================================================
+
+        $clientesParaEstadisticas =
+            (clone $consultaClientes)->get();
+
+
+        $clientesAlCorriente = 0;
+        $clientesProximos = 0;
+        $clientesMorosos = 0;
+
+
+        foreach (
+            $clientesParaEstadisticas
+            as $clienteEstadistica
+        ) {
+
+            // -------------------------------------------------
+            // CONTRATO ACTIVO MÁS RECIENTE
+            // -------------------------------------------------
+
+            $contratoEstadistica =
+                $clienteEstadistica->contratos
+                    ->where('estado', 'ACTIVO')
+                    ->sortByDesc('id')
+                    ->first();
+
+
+            if (!$contratoEstadistica) {
+                continue;
+            }
+
+
+            // -------------------------------------------------
+            // CUOTAS DEL CONTRATO
+            // -------------------------------------------------
+
+            $cuotasEstadistica =
+                $contratoEstadistica->cuotas;
+
+
+            // -------------------------------------------------
+            // CUOTA VENCIDA
+            // -------------------------------------------------
+
+            $cuotaVencida =
+                $cuotasEstadistica
+                    ->where('estado', 'VENCIDA')
+                    ->first();
+
+
+            // -------------------------------------------------
+            // PRÓXIMA CUOTA PENDIENTE
+            // -------------------------------------------------
+
+            $cuotaProxima =
+                $cuotasEstadistica
+                    ->where('estado', 'PENDIENTE')
+                    ->sortBy('fecha_vencimiento')
+                    ->first();
+
+
+            // -------------------------------------------------
+            // DETERMINAR ESTADO DE LA CUENTA
+            // -------------------------------------------------
+
+            if ($cuotaVencida) {
+
+                $clientesMorosos++;
+
+            } elseif (
+                $cuotaProxima &&
+                $cuotaProxima->fecha_vencimiento &&
+                now()->diffInDays(
+                    $cuotaProxima->fecha_vencimiento,
+                    false
+                ) >= 0 &&
+                now()->diffInDays(
+                    $cuotaProxima->fecha_vencimiento,
+                    false
+                ) <= 15
+            ) {
+
+                $clientesProximos++;
+
+            } else {
+
+                $clientesAlCorriente++;
+            }
+        }
+
+
+        // =====================================================
+        // PAGINACIÓN
+        //
+        // La tabla sigue mostrando solamente 10 clientes.
+        // =====================================================
+
+        $clientes =
+            $consultaClientes
+                ->latest()
+                ->paginate(10);
+
+
+        // =====================================================
+        // ENVIAR DATOS A LA VISTA
+        // =====================================================
+
+        return view(
+            'livewire.admin.clientes.index',
+            [
+                'clientes' =>
+                    $clientes,
+
+                'esAdmin' =>
+                    $esAdmin,
+
+                'clientesAlCorriente' =>
+                    $clientesAlCorriente,
+
+                'clientesProximos' =>
+                    $clientesProximos,
+
+                'clientesMorosos' =>
+                    $clientesMorosos,
+            ]
+        )->layout('layouts.app');
     }
+
+
+    // =========================================================
+    // ABRIR MODAL CREAR
+    // =========================================================
 
     public function abrirModalCrear()
     {
@@ -201,37 +428,63 @@ class ClientManagement extends Component
             'rfc'
         ]);
 
-        $this->estado = true;
-
         $this->resetValidation();
 
         $this->modalAbierto = true;
     }
+
+
+    // =========================================================
+    // ABRIR MODAL EDITAR
+    // =========================================================
 
     public function abrirModalEditar($id)
     {
         $this->resetValidation();
 
-        $cliente = Cliente::findOrFail($id);
+        $cliente =
+            Cliente::findOrFail($id);
 
-        $this->clienteId        = $cliente->id;
-        $this->nombre           = $cliente->nombre;
-        $this->apellido_paterno = $cliente->apellido_paterno;
-        $this->apellido_materno = $cliente->apellido_materno;
 
-        $this->fecha_nacimiento = $cliente->fecha_nacimiento
-            ? $cliente->fecha_nacimiento->format('Y-m-d')
-            : null;
+        $this->clienteId =
+            $cliente->id;
 
-        $this->telefono = $cliente->telefono;
-        $this->email = $cliente->email;
-        $this->direccion = $cliente->direccion;
-        $this->curp = $cliente->curp;
-        $this->rfc = $cliente->rfc;
-        $this->estado = (bool) $cliente->estado;
+        $this->nombre =
+            $cliente->nombre;
+
+        $this->apellido_paterno =
+            $cliente->apellido_paterno;
+
+        $this->apellido_materno =
+            $cliente->apellido_materno;
+
+        $this->fecha_nacimiento =
+            $cliente->fecha_nacimiento
+                ? $cliente->fecha_nacimiento->format('Y-m-d')
+                : null;
+
+        $this->telefono =
+            $cliente->telefono;
+
+        $this->email =
+            $cliente->email;
+
+        $this->direccion =
+            $cliente->direccion;
+
+        $this->curp =
+            $cliente->curp;
+
+        $this->rfc =
+            $cliente->rfc;
 
         $this->modalAbierto = true;
     }
+
+
+    // =========================================================
+    // CERRAR MODAL
+    // =========================================================
 
     public function cerrarModal()
     {
@@ -240,12 +493,20 @@ class ClientManagement extends Component
         $this->modalAbierto = false;
     }
 
+
+    // =========================================================
+    // GUARDAR CLIENTE
+    // =========================================================
+
     public function guardar()
     {
         $this->validate();
 
+
         $datos = [
-            'nombre' => trim($this->nombre),
+
+            'nombre' =>
+                trim($this->nombre),
 
             'apellido_paterno' =>
                 trim($this->apellido_paterno),
@@ -273,28 +534,46 @@ class ClientManagement extends Component
 
             'curp' =>
                 $this->curp
-                    ? strtoupper(trim($this->curp))
+                    ? strtoupper(
+                        trim($this->curp)
+                    )
                     : null,
 
             'rfc' =>
                 $this->rfc
-                    ? strtoupper(trim($this->rfc))
+                    ? strtoupper(
+                        trim($this->rfc)
+                    )
                     : null,
-
-            'estado' => $this->estado,
         ];
 
-        // Si es un cliente nuevo, se asocia al usuario logueado
+
+        // -----------------------------------------------------
+        // CLIENTE NUEVO
+        // -----------------------------------------------------
+
         if (!$this->clienteId) {
-            $datos['user_id'] = auth()->id();
+
+            $datos['user_id'] =
+                auth()->id();
         }
 
+
+        // -----------------------------------------------------
+        // CREAR O ACTUALIZAR
+        // -----------------------------------------------------
+
         Cliente::updateOrCreate(
-            ['id' => $this->clienteId],
+            [
+                'id' =>
+                    $this->clienteId
+            ],
             $datos
         );
 
+
         $this->cerrarModal();
+
 
         session()->flash(
             'mensaje',
@@ -302,21 +581,20 @@ class ClientManagement extends Component
         );
     }
 
-    public function cambiarEstado($id)
-    {
-        $cliente = Cliente::findOrFail($id);
 
-        $cliente->estado = !$cliente->estado;
-
-        $cliente->save();
-    }
+    // =========================================================
+    // ELIMINAR CLIENTE
+    // =========================================================
 
     public function eliminar($id)
     {
-        $cliente = Cliente::withCount('contratos')
-            ->findOrFail($id);
+        $cliente =
+            Cliente::withCount('contratos')
+                ->findOrFail($id);
+
 
         if ($cliente->contratos_count > 0) {
+
             session()->flash(
                 'error',
                 "No se puede eliminar a '{$cliente->nombre_completo}' porque tiene {$cliente->contratos_count} contrato(s) asociado(s)."
@@ -325,7 +603,9 @@ class ClientManagement extends Component
             return;
         }
 
+
         $cliente->delete();
+
 
         session()->flash(
             'mensaje',
