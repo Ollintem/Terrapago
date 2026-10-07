@@ -11,6 +11,10 @@ class RoleManagement extends Component
     public $modalAbierto = false;
     public $modoEdicion = false;
 
+    // Control de vista: 'index' o 'delete'
+    public $vistaActual = 'index';
+    public $rolAEliminar = null;
+
     public $rolId;
     public $nombre;
     public $descripcion;
@@ -24,8 +28,7 @@ class RoleManagement extends Component
             ];
         }
 
-        // Al editar un rol existente se conserva la validación
-        // de la descripción que ya tenía el sistema.
+        // Al editar un rol existente
         return [
             'nombre'      => 'required|string|max:50|unique:roles,nombre,' . $this->rolId,
             'descripcion' => 'nullable|string|max:255',
@@ -48,18 +51,12 @@ class RoleManagement extends Component
         ];
     }
 
-    public function render()
+    public function cambiarVista($vista)
     {
-        $roles = Role::withCount('users')
-            ->when($this->search, function ($query) {
-                $query->where('nombre', 'like', '%' . $this->search . '%')
-                      ->orWhere('descripcion', 'like', '%' . $this->search . '%');
-            })
-            ->get();
-
-        return view('livewire.admin.roles.index', [
-            'roles' => $roles,
-        ])->layout('layouts.app');
+        $this->vistaActual = $vista;
+        if ($vista === 'index') {
+            $this->rolAEliminar = null;
+        }
     }
 
     public function abrirModalCrear()
@@ -72,7 +69,6 @@ class RoleManagement extends Component
         ]);
 
         $this->resetValidation();
-
         $this->modoEdicion = false;
         $this->modalAbierto = true;
     }
@@ -102,13 +98,10 @@ class RoleManagement extends Component
 
         // CREAR NUEVO ROL
         if (!$this->modoEdicion) {
-
             Role::create([
                 'nombre' => trim($this->nombre),
             ]);
-
         } else {
-
             // EDITAR ROL EXISTENTE
             $rol = Role::findOrFail($this->rolId);
 
@@ -120,13 +113,13 @@ class RoleManagement extends Component
 
         $this->cerrarModal();
 
-        session()->flash(
-            'mensaje',
-            'Rol guardado correctamente.'
-        );
+        session()->flash('mensaje', 'Rol guardado correctamente.');
     }
 
-    public function eliminar($id)
+    /**
+     * Prepara los datos y abre el modal flotante de eliminación.
+     */
+    public function confirmarEliminar($id)
     {
         $rol = Role::withCount('users')->findOrFail($id);
 
@@ -134,36 +127,70 @@ class RoleManagement extends Component
         if (
             in_array(
                 strtolower($rol->nombre),
-                [
-                    'administrador',
-                    'super admin',
-                    'superadministrador'
-                ]
+                ['administrador', 'super admin', 'superadministrador']
             )
         ) {
-            session()->flash(
-                'error',
-                'El rol principal de Administrador no puede ser eliminado.'
-            );
-
+            session()->flash('error', 'El rol principal de Administrador no puede ser eliminado.');
             return;
         }
 
-        // Protección 2: Evitar eliminación si hay usuarios asignados
+        $this->rolAEliminar = $rol;
+        // Ya no cambiamos $vistaActual porque se muestra con @include en index
+    }
+
+    /**
+     * Cierra el modal flotante de eliminación.
+     */
+    public function cancelarEliminar()
+    {
+        $this->rolAEliminar = null;
+    }
+
+    /**
+     * Ejecuta el borrado tras confirmar en el modal delete.
+     */
+    public function ejecutarEliminar()
+    {
+        if (!$this->rolAEliminar) {
+            return;
+        }
+
+        $rol = Role::withCount('users')->findOrFail($this->rolAEliminar->id);
+
+        // Protección 2: Evitar eliminación si tiene usuarios asignados
         if ($rol->users_count > 0) {
             session()->flash(
                 'error',
                 "No se puede eliminar '{$rol->nombre}': tiene {$rol->users_count} usuario(s) asignado(s). Reasígnalos primero."
             );
-
+            $this->rolAEliminar = null;
             return;
+        }
+
+        $nombre = $rol->nombre;
+
+        // Eliminar permisos asociados si existe la relación
+        if (method_exists($rol, 'permisos')) {
+            $rol->permisos()->delete();
         }
 
         $rol->delete();
 
-        session()->flash(
-            'mensaje',
-            'Rol eliminado correctamente.'
-        );
+        $this->rolAEliminar = null;
+        session()->flash('mensaje', "El rol '{$nombre}' fue eliminado correctamente.");
+    }
+
+    public function render()
+    {
+        $roles = Role::withCount('users')
+            ->when($this->search, function ($query) {
+                $query->where('nombre', 'like', '%' . $this->search . '%')
+                      ->orWhere('descripcion', 'like', '%' . $this->search . '%');
+            })
+            ->get();
+
+        return view('livewire.admin.roles.index', [
+            'roles' => $roles,
+        ])->layout('layouts.app');
     }
 }

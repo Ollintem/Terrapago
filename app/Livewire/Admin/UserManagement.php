@@ -237,6 +237,58 @@ class UserManagement extends Component
         session()->flash('mensaje', "El usuario {$nombreUsuario} fue {$estadoTexto} exitosamente.");
     }
 
+    // Propiedad para almacenar el usuario seleccionado
+    public $usuarioAAccionar = null;
+
+    /**
+     * Prepara y abre el modal de confirmación.
+     */
+    public function confirmarToggleEstado($id)
+    {
+        $usuario = User::findOrFail($id);
+
+        // Protección 1: Evitar que el usuario logueado se desactive a sí mismo
+        if (auth()->id() === $usuario->id) {
+            session()->flash('error', 'No puedes desactivar tu propia cuenta en sesión.');
+            return;
+        }
+
+        // Protección 2: Evitar desactivar al superadministrador principal
+        if ($usuario->rol && in_array(strtolower($usuario->rol->nombre), ['administrador', 'super admin', 'superadministrador']) && $usuario->id === 1) {
+            session()->flash('error', 'La cuenta principal de Superadministrador no puede desactivarse.');
+            return;
+        }
+
+        $this->usuarioAAccionar = $usuario;
+    }
+
+    /**
+     * Cierra el modal.
+     */
+    public function cancelarAccionUsuario()
+    {
+        $this->usuarioAAccionar = null;
+    }
+
+    /**
+     * Ejecuta el cambio de estado (activo/inactivo).
+     */
+    public function ejecutarToggleEstado()
+    {
+        if (!$this->usuarioAAccionar) {
+            return;
+        }
+
+        $usuario = User::findOrFail($this->usuarioAAccionar->id);
+        $usuario->activo = !$usuario->activo;
+        $usuario->save();
+
+        $estadoTexto = $usuario->activo ? 'activado' : 'desactivado';
+        session()->flash('mensaje', "El usuario '{$usuario->nombre}' ha sido {$estadoTexto} exitosamente.");
+
+        $this->usuarioAAccionar = null;
+    }
+
     /*
     |--------------------------------------------------------------------------
     | REDIRECCIÓN A GESTIÓN DE PERMISOS

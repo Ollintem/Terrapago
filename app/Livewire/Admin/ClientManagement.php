@@ -119,6 +119,9 @@ class ClientManagement extends Component
             'email.unique' =>
                 'Este correo electrónico ya está registrado.',
 
+            'email.required' =>
+                'El correo electrónico es obligatorio.',
+                
             'direccion.string' =>
                 'La dirección debe ser texto.',
 

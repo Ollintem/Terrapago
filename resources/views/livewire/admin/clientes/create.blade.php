@@ -2,13 +2,14 @@
      MODAL REGISTRO / EDICIÓN
      SE CONSERVA LA LÓGICA ACTUAL
 ========================================================== --}}
-@if($modalAbierto)
-
-    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm
+@if ($modalAbierto)
+    <div
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm
                 flex items-center justify-center
                 z-50 p-4">
 
-        <div class="bg-white rounded-2xl
+        <div
+            class="bg-white rounded-2xl
                     shadow-2xl
                     w-full max-w-xl
                     p-6
@@ -20,22 +21,15 @@
 
                 <div class="flex items-center gap-3">
 
-                    <div class="w-10 h-10 rounded-xl
+                    <div
+                        class="w-10 h-10 rounded-xl
                                 bg-emerald-50
                                 text-emerald-600
                                 flex items-center justify-center">
 
-                        <svg
-                            class="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 4v16m8-8H4"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
 
                         </svg>
 
@@ -65,7 +59,8 @@
 
                     <div>
 
-                        <label class="block text-xs font-bold
+                        <label
+                            class="block text-xs font-bold
                                       text-slate-600 uppercase
                                       tracking-wide mb-1.5">
 
@@ -73,10 +68,7 @@
 
                         </label>
 
-                        <input
-                            type="text"
-                            wire:model="nombre"
-
+                        <input type="text" wire:model="nombre"
                             class="w-full px-3 py-2.5
                                    border border-slate-300
                                    rounded-lg
@@ -96,7 +88,8 @@
 
                     <div>
 
-                        <label class="block text-xs font-bold
+                        <label
+                            class="block text-xs font-bold
                                       text-slate-600 uppercase
                                       tracking-wide mb-1.5">
 
@@ -104,10 +97,7 @@
 
                         </label>
 
-                        <input
-                            type="text"
-                            wire:model="apellido_paterno"
-
+                        <input type="text" wire:model="apellido_paterno"
                             class="w-full px-3 py-2.5
                                    border border-slate-300
                                    rounded-lg
@@ -127,7 +117,8 @@
 
                     <div>
 
-                        <label class="block text-xs font-bold
+                        <label
+                            class="block text-xs font-bold
                                       text-slate-600 uppercase
                                       tracking-wide mb-1.5">
 
@@ -135,10 +126,7 @@
 
                         </label>
 
-                        <input
-                            type="text"
-                            wire:model="apellido_materno"
-
+                        <input type="text" wire:model="apellido_materno"
                             class="w-full px-3 py-2.5
                                    border border-slate-300
                                    rounded-lg
@@ -163,7 +151,8 @@
 
                     <div>
 
-                        <label class="block text-xs font-bold
+                        <label
+                            class="block text-xs font-bold
                                       text-slate-600 uppercase
                                       tracking-wide mb-1.5">
 
@@ -171,11 +160,7 @@
 
                         </label>
 
-                        <input
-                            type="text"
-                            wire:model="telefono"
-                            placeholder="10 dígitos"
-
+                        <input type="text" wire:model="telefono" placeholder="10 dígitos"
                             class="w-full px-3 py-2.5
                                    border border-slate-300
                                    rounded-lg
@@ -195,7 +180,8 @@
 
                     <div>
 
-                        <label class="block text-xs font-bold
+                        <label
+                            class="block text-xs font-bold
                                       text-slate-600 uppercase
                                       tracking-wide mb-1.5">
 
@@ -203,10 +189,7 @@
 
                         </label>
 
-                        <input
-                            type="date"
-                            wire:model="fecha_nacimiento"
-
+                        <input type="date" wire:model="fecha_nacimiento"
                             class="w-full px-3 py-2.5
                                    border border-slate-300
                                    rounded-lg
@@ -226,18 +209,16 @@
 
                     <div>
 
-                        <label class="block text-xs font-bold
+                        <label
+                            class="block text-xs font-bold
                                       text-slate-600 uppercase
                                       tracking-wide mb-1.5">
 
-                            Correo
+                            Correo *
 
                         </label>
 
-                        <input
-                            type="email"
-                            wire:model="email"
-
+                        <input type="email" wire:model="email"
                             class="w-full px-3 py-2.5
                                    border border-slate-300
                                    rounded-lg
@@ -262,7 +243,8 @@
 
                     <div>
 
-                        <label class="block text-xs font-bold
+                        <label
+                            class="block text-xs font-bold
                                       text-slate-600 uppercase
                                       tracking-wide mb-1.5">
 
@@ -270,10 +252,7 @@
 
                         </label>
 
-                        <input
-                            type="text"
-                            wire:model="curp"
-
+                        <input type="text" wire:model="curp"
                             class="w-full px-3 py-2.5
                                    border border-slate-300
                                    rounded-lg
@@ -293,7 +272,8 @@
 
                     <div>
 
-                        <label class="block text-xs font-bold
+                        <label
+                            class="block text-xs font-bold
                                       text-slate-600 uppercase
                                       tracking-wide mb-1.5">
 
@@ -301,10 +281,7 @@
 
                         </label>
 
-                        <input
-                            type="text"
-                            wire:model="rfc"
-
+                        <input type="text" wire:model="rfc"
                             class="w-full px-3 py-2.5
                                    border border-slate-300
                                    rounded-lg
@@ -327,7 +304,8 @@
                 {{-- DIRECCIÓN --}}
                 <div>
 
-                    <label class="block text-xs font-bold
+                    <label
+                        class="block text-xs font-bold
                                   text-slate-600 uppercase
                                   tracking-wide mb-1.5">
 
@@ -335,11 +313,7 @@
 
                     </label>
 
-                    <textarea
-                        wire:model="direccion"
-                        rows="2"
-                        placeholder="Calle, número, colonia, municipio"
-
+                    <textarea wire:model="direccion" rows="2" placeholder="Calle, número, colonia, municipio"
                         class="w-full px-3 py-2.5
                                border border-slate-300
                                rounded-lg
@@ -360,10 +334,7 @@
                 {{-- BOTONES --}}
                 <div class="flex justify-end gap-3 pt-4">
 
-                    <button
-                        type="button"
-                        wire:click="cerrarModal"
-
+                    <button type="button" wire:click="cerrarModal"
                         class="px-4 py-2.5
                                border border-slate-300
                                text-slate-600
@@ -378,9 +349,7 @@
                     </button>
 
 
-                    <button
-                        type="submit"
-
+                    <button type="submit"
                         class="px-4 py-2.5
                                bg-emerald-600
                                text-white
@@ -403,5 +372,4 @@
         </div>
 
     </div>
-
 @endif
